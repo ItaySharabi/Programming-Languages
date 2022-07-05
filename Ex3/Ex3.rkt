@@ -1,16 +1,13 @@
 #lang pl
 
-;;            Question 1:
-;; ===================================
-
  #| BNF for the AE language: 
  <AE> ::= <num> 
- | { <AE> <AE> + } 
- | { <AE> <AE> - } 
- | { <AE> <AE> * } 
- | { <AE> <AE> / }
- | { <AE> <AE> power }
- | { <AE> <AE> sqr }
+         | { <AE> <AE> + } 
+         | { <AE> <AE> - } 
+         | { <AE> <AE> * } 
+         | { <AE> <AE> / }
+         | { <AE> <AE> power }
+         | { <AE> <AE> sqr }
 
 |# ;; AE abstract syntax trees
 
@@ -123,5 +120,5 @@
 (test (run "{{2 2 power} 2 /}") => 2)
 (test (run "{{2 sqr} 2 /}") => 2)
 (test (run "{{2 -2 power} 2 /}") => 1/8)
+(test (run "{{2 4 power} {5 sqr} +}") => 41)
 (test (run "{{2 4/5 power} {5 sqr} +}") =error> "eval:*")
-
