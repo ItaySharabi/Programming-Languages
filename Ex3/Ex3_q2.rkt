@@ -1,4 +1,5 @@
 #lang pl
+
 #|
 
 <LE> ::=   { <num> }             (1) A Racket `Number` terminal                                 
@@ -59,7 +60,7 @@ Time: 20 min (Once understanding what and how to accomplish).
 (define (parse-sexprLE sexpr) 
  (match sexpr 
  [(number: n) (NumLE n)] 
- ['null (EmptyList )] 
+ ['null (EmptyList )]  
  [(symbol: s) (SymLE s)] 
  [(cons 'list rest) 
   (cond
@@ -69,10 +70,10 @@ Time: 20 min (Once understanding what and how to accomplish).
   (Cons (parse-sexprLE le) (parse-sexpr->LIST list-sexpr))]
  [(list 'append) 
   (EmptyList )]
- [(list 'append le)
-  (Append (parse-sexpr->LISTs (list le)))] 
+ [(cons 'append le)
+  (Append (parse-sexpr->LISTs le))] 
  [else (error 'parse-sexprLE "bad syntax in ~s" sexpr)])) 
- 
+  
 (: parseLE : String -> LE) 
  ;; parses a string containing a LE expression to a 
  ;; LE AST 
@@ -86,14 +87,20 @@ Time: 20 min (Once understanding what and how to accomplish).
 (test (parseLE "{append}") => (EmptyList))
 (test (parseLE "{list}") => (EmptyList))
  
-
-
 (test (parseLE "{append {cons 1 {append}}}") =>
-      (Append (list (Cons (NumLE 1) (EmptyList)))))
+      (Append
+       (list (Cons (NumLE 1) (EmptyList)))))
+
+(test (parseLE "{append {list 1 2} {list 3 4} {list 5 6}}")
+      => (Append
+          (list
+           (ListLE (list (NumLE 1) (NumLE 2)))
+           (ListLE (list (NumLE 3) (NumLE 4)))
+           (ListLE (list (NumLE 5) (NumLE 6))))))
 
 (test (parseLE "{cons 1 2}") =error> "expected LIST")
 (test (parseLE "{cons}") =error> "bad syntax*")
-
+ 
 
 
 #| ================== evalLE ==================
@@ -181,8 +188,14 @@ eval({append E ...}) = if for all expressions E:
 (test (runLE "{cons 1 {cons 2 {cons 3 {append}}}}") =>
       '(1 2 3))
 
-(test (runLE "{append {cons 1 {append}}}") => '(1))
+(test (runLE "{append {list 1 2 3} {list 4 5 6}}") =>
+      '(1 2 3 4 5 6))
 
+(test (runLE "{append {list 1 2 3} {list 4 5 6} {list x}}") =>
+      '(1 2 3 4 5 6 x))
+  
+(test (runLE "{append {cons 1 {append}}}") =>
+      '(1))
 
 (test (runLE "{list {cons}}") =error>
       "parse-sexprLE: bad syntax in (cons)")
