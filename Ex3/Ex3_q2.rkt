@@ -33,7 +33,7 @@ We've taken the parser skeleton from Moodle and
 filled in the blanks. Thank you for the partial solution!
 This parser implementation follows exactly our BNF from Ex2.
 
-Time: 15 min (Once understanding what and how to accomplish).
+Time: 20 min (Once understanding what and how to accomplish).
 |#
 (: parse-sexpr->LEs : (Listof Sexpr) -> (Listof LE)) 
  ;; converts a list of s-expressions into a list of LEs 
@@ -86,21 +86,28 @@ Time: 15 min (Once understanding what and how to accomplish).
 (test (parseLE "{append}") => (EmptyList))
 (test (parseLE "{list}") => (EmptyList))
  
- 
-#|
+
+
 (test (parseLE "{append {cons 1 {append}}}") =>
-      (Append (Cons (NumLE 1) (Append (EmptyList )))))
-|#
+      (Append (list (Cons (NumLE 1) (EmptyList)))))
 
 (test (parseLE "{cons 1 2}") =error> "expected LIST")
 (test (parseLE "{cons}") =error> "bad syntax*")
 
 
 
-;; evalLE
+#| ================== evalLE ==================
+
+Evaluation procedure for our LE Language -
+consuming an LE abstract syntax tree and
+evaluates the given program, contained in a String.
+
+The task of writing an interpreter for our language
+took less than 2 hours (Thanks to the partial solution given to us).
+|#
 
 #|
-Formal specs for `eval': 
+Formal specs for `eval`: 
 eval(N) = N ;; for numbers 
 
 eval(Sym) = 'Sym ;; for symbols 
@@ -128,7 +135,7 @@ eval({append E ...}) = if for all expressions E:
            (error 'evalLE "append argument: expected List got ~s" fst-val)))))
 
  (: evalLE : LE -> Any)
- ;; evaluates LE expressions by reducing them to numbers and lists
+ ;; evaluates LE expressions by reducing them to numbers, symbols and lists
  (define (evalLE expr)
    (if (LIST? expr)
        (cases expr
@@ -136,8 +143,8 @@ eval({append E ...}) = if for all expressions E:
          [(Cons first rest)
           (cons (evalLE first)
                 (let
-                  ([x (evalLE rest)])
-                  (if (list? x) x (error 'evalLE "expected list"))))]
+                  ([rst-val (evalLE rest)])
+                  (if (list? rst-val) rst-val (error 'evalLE "expected list"))))]
          [(Append listof-les) (apply append (eval-append-args listof-les))]
          [(EmptyList) null])
        
@@ -147,10 +154,38 @@ eval({append E ...}) = if for all expressions E:
          [(SymLE s) s])))
  
  (: runLE : String -> Any) 
- ;; evaluate a WAE program contained in a string 
+ ;; evaluate a LE program contained in a string 
  (define (runLE str)
    (evalLE (parseLE str)))
 
 
 
+(test (runLE "null") =>
+      null)
 
+(test (runLE "12") =>
+      12)
+
+(test (runLE "boo") =>
+      'boo)
+
+(test (runLE "{cons 1 {cons two null}}") =>
+      '(1 two))
+
+(test (runLE "{cons 1 {append {append}}}") =>
+      '(1))
+
+(test (runLE "{list 1 2 3}") =>
+      '(1 2 3))
+
+(test (runLE "{cons 1 {cons 2 {cons 3 {append}}}}") =>
+      '(1 2 3))
+
+(test (runLE "{append {cons 1 {append}}}") => '(1))
+
+
+(test (runLE "{list {cons}}") =error>
+      "parse-sexprLE: bad syntax in (cons)")
+
+(test (runLE "{list {cons 2 1}}") =error>
+      "parsesexprLE: expected LIST; got")
